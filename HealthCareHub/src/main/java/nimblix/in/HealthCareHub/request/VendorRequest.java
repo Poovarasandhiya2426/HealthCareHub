@@ -1,9 +1,9 @@
-package nimblix.in.HealthCareHub.dto;
+package nimblix.in.HealthCareHub.request;
 
 import lombok.Data;
 
 @Data
-public class VendorRequestDto {
+public class VendorRequest {
 
     private String vendorName;
     private String email;

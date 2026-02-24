@@ -1,12 +1,11 @@
 package nimblix.in.HealthCareHub.controller;
 
 import lombok.RequiredArgsConstructor;
-import nimblix.in.HealthCareHub.model.Medicine;
+import nimblix.in.HealthCareHub.request.MedicineExpiryRequest;
+import nimblix.in.HealthCareHub.response.MedicineResponse;
 import nimblix.in.HealthCareHub.service.MedicineService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -17,15 +16,23 @@ public class MedicineController {
 
     private final MedicineService medicineService;
 
-    // ✅ Expiry Tracking API
+    // Expiry Tracking API
     @GetMapping("/expiry")
-    public List<Medicine> getExpiringMedicines(@RequestParam int days) {
-        return medicineService.getExpiringMedicines(days);
+    public ResponseEntity<List<MedicineResponse>> getExpiringMedicines(
+            MedicineExpiryRequest request) {
+
+        return ResponseEntity.ok(
+                medicineService.getExpiringMedicines(request.getDays())
+        );
     }
 
-    // ✅ Low Stock Alert API
+    // Low Stock Alert
     @GetMapping("/low-stock")
-    public List<Medicine> getLowStockMedicines(@RequestParam int limit) {
-        return medicineService.getLowStockMedicines(limit);
+    public ResponseEntity<List<MedicineResponse>> getLowStockMedicines(
+            @RequestParam int limit) {
+
+        return ResponseEntity.ok(
+                medicineService.getLowStockMedicines(limit)
+        );
     }
 }

@@ -1,9 +1,10 @@
 package nimblix.in.HealthCareHub.controller;
 
 import lombok.RequiredArgsConstructor;
-import nimblix.in.HealthCareHub.dto.VendorRequestDto;
-import nimblix.in.HealthCareHub.model.Vendor;
+import nimblix.in.HealthCareHub.request.VendorRequest;
+import nimblix.in.HealthCareHub.response.VendorResponse;
 import nimblix.in.HealthCareHub.service.VendorService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,20 +17,17 @@ public class VendorController {
     private final VendorService vendorService;
 
     @PostMapping
-    public Vendor createVendor(@RequestBody VendorRequestDto requestDto) {
-        return vendorService.createVendor(requestDto);
+    public ResponseEntity<VendorResponse> createVendor(@RequestBody VendorRequest request) {
+        return ResponseEntity.ok(vendorService.createVendor(request));
     }
 
     @GetMapping
-    public List<Vendor> getAllVendors() {
-        return vendorService.getAllVendors();
+    public ResponseEntity<List<VendorResponse>> getAllVendors() {
+        return ResponseEntity.ok(vendorService.getAllVendors());
     }
 
     @GetMapping("/{id}")
-    public Vendor getVendorById(@PathVariable Long id) {
-        return vendorService.getVendorById(id);
+    public ResponseEntity<VendorResponse> getVendorById(@PathVariable Long id) {
+        return ResponseEntity.ok(vendorService.getVendorById(id));
     }
-
-
-
 }

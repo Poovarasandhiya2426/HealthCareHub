@@ -24,5 +24,4 @@ public class Medicine {
     private String manufacturer;
 
     private LocalDate expiryDate;
-
 }

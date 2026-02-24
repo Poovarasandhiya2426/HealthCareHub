@@ -1,13 +1,14 @@
 package nimblix.in.HealthCareHub.controller;
 
 import lombok.RequiredArgsConstructor;
-import nimblix.in.HealthCareHub.dto.PurchaseOrderRequestDto;
-import nimblix.in.HealthCareHub.model.PurchaseOrder;
+import nimblix.in.HealthCareHub.request.PurchaseOrderRequest;
+
+import nimblix.in.HealthCareHub.response.PurchaseOrderResponse;
 import nimblix.in.HealthCareHub.service.PurchaseOrderService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/purchase-orders")
 @RequiredArgsConstructor
@@ -15,38 +16,35 @@ public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
 
-    // ✅ Create Purchase Order
     @PostMapping
-    public PurchaseOrder createPurchaseOrder(@RequestBody PurchaseOrderRequestDto dto) {
-        return purchaseOrderService.createPurchaseOrder(dto);
+    public ResponseEntity<PurchaseOrderResponse> createPurchaseOrder(
+            @RequestBody PurchaseOrderRequest request) {
+
+        return ResponseEntity.ok(purchaseOrderService.createPurchaseOrder(request));
     }
 
-    // ✅ Get All Purchase Orders
     @GetMapping
-    public List<PurchaseOrder> getAllPurchaseOrders() {
-        return purchaseOrderService.getAllPurchaseOrders();
+    public ResponseEntity<List<PurchaseOrderResponse>> getAllPurchaseOrders() {
+        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
     }
 
-    // ✅ Get Purchase Order By ID
     @GetMapping("/{id}")
-    public PurchaseOrder getPurchaseOrderById(@PathVariable Long id) {
-        return purchaseOrderService.getPurchaseOrderById(id);
+    public ResponseEntity<PurchaseOrderResponse> getPurchaseOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderById(id));
     }
 
-    // ✅ Approve Purchase Order
     @PutMapping("/approve/{id}")
-    public PurchaseOrder approvePurchaseOrder(@PathVariable Long id) {
-        return purchaseOrderService.approvePurchaseOrder(id);
+    public ResponseEntity<PurchaseOrderResponse> approvePurchaseOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.approvePurchaseOrder(id));
     }
 
-    // ✅ Reject Purchase Order
     @PutMapping("/reject/{id}")
-    public PurchaseOrder rejectPurchaseOrder(@PathVariable Long id) {
-        return purchaseOrderService.rejectPurchaseOrder(id);
+    public ResponseEntity<PurchaseOrderResponse> rejectPurchaseOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.rejectPurchaseOrder(id));
     }
 
     @PutMapping("/receive/{id}")
-    public PurchaseOrder receiveGoods(@PathVariable Long id) {
-        return purchaseOrderService.receiveGoods(id);
+    public ResponseEntity<PurchaseOrderResponse> receiveGoods(@PathVariable Long id) {
+        return ResponseEntity.ok(purchaseOrderService.receiveGoods(id));
     }
 }

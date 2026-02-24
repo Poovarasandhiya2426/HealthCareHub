@@ -22,7 +22,7 @@ public class PurchaseOrder {
 
     private LocalDate orderDate;
 
-    private String status; // PENDING / APPROVED / REJECTED
+    private String status;
 
     @ManyToOne
     @JoinColumn(name = "vendor_id")

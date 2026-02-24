@@ -1,16 +1,15 @@
 package nimblix.in.HealthCareHub.service;
 
-import nimblix.in.HealthCareHub.dto.VendorRequestDto;
-import nimblix.in.HealthCareHub.model.Vendor;
+import nimblix.in.HealthCareHub.request.VendorRequest;
+import nimblix.in.HealthCareHub.response.VendorResponse;
 
 import java.util.List;
 
 public interface VendorService {
 
-    Vendor createVendor(VendorRequestDto requestDto);
+    VendorResponse createVendor(VendorRequest request);
 
-    List<Vendor> getAllVendors();
+    List<VendorResponse> getAllVendors();
 
-    Vendor getVendorById(Long id);
-
+    VendorResponse getVendorById(Long id);
 }

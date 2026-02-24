@@ -1,23 +1,22 @@
 package nimblix.in.HealthCareHub.service;
 
-import nimblix.in.HealthCareHub.dto.PurchaseOrderRequestDto;
+import nimblix.in.HealthCareHub.request.PurchaseOrderRequest;
 import nimblix.in.HealthCareHub.model.PurchaseOrder;
+import nimblix.in.HealthCareHub.response.PurchaseOrderResponse;
 
 import java.util.List;
 
-    public interface PurchaseOrderService {
+public interface PurchaseOrderService {
 
-        PurchaseOrder createPurchaseOrder(PurchaseOrderRequestDto dto);
+    PurchaseOrderResponse createPurchaseOrder(PurchaseOrderRequest request);
 
-        List<PurchaseOrder> getAllPurchaseOrders();
+    List<PurchaseOrderResponse> getAllPurchaseOrders();
 
-        PurchaseOrder getPurchaseOrderById(Long id);
+    PurchaseOrderResponse getPurchaseOrderById(Long id);
 
-        PurchaseOrder approvePurchaseOrder(Long id);
+    PurchaseOrderResponse approvePurchaseOrder(Long id);
 
-        PurchaseOrder rejectPurchaseOrder(Long id);
+    PurchaseOrderResponse rejectPurchaseOrder(Long id);
 
-        PurchaseOrder receiveGoods(Long orderId);
-
-    }
-
+    PurchaseOrderResponse receiveGoods(Long orderId);
+}

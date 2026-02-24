@@ -3,6 +3,7 @@ package nimblix.in.HealthCareHub.serviceImpl;
 import lombok.RequiredArgsConstructor;
 import nimblix.in.HealthCareHub.model.Medicine;
 import nimblix.in.HealthCareHub.repository.MedicineRepository;
+import nimblix.in.HealthCareHub.response.MedicineResponse;
 import nimblix.in.HealthCareHub.service.MedicineService;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +17,38 @@ public class MedicineServiceImpl implements MedicineService {
     private final MedicineRepository medicineRepository;
 
     @Override
-    public List<Medicine> getExpiringMedicines(int days) {
+    public List<MedicineResponse> getExpiringMedicines(int days) {
 
         LocalDate today = LocalDate.now();
         LocalDate futureDate = today.plusDays(days);
 
-        return medicineRepository.findByExpiryDateBetween(today, futureDate);
+        List<Medicine> medicines =
+                medicineRepository.findByExpiryDateBetween(today, futureDate);
+
+        return medicines.stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public List<Medicine> getLowStockMedicines(int limit) {
-        return medicineRepository.findByStockQuantityLessThanEqual(limit);
+    public List<MedicineResponse> getLowStockMedicines(int limit) {
+
+        List<Medicine> medicines =
+                medicineRepository.findByStockQuantityLessThanEqual(limit);
+
+        return medicines.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private MedicineResponse mapToResponse(Medicine medicine) {
+
+        return MedicineResponse.builder()
+                .id(medicine.getId())
+                .name(medicine.getName())
+                .stockQuantity(medicine.getStockQuantity())
+                .manufacturer(medicine.getManufacturer())
+                .expiryDate(medicine.getExpiryDate())
+                .build();
     }
 }

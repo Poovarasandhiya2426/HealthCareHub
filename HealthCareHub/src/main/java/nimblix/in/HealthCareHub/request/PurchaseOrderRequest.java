@@ -1,9 +1,9 @@
-package nimblix.in.HealthCareHub.dto;
+package nimblix.in.HealthCareHub.request;
 
 import lombok.Data;
 
 @Data
-public class PurchaseOrderRequestDto {
+public class PurchaseOrderRequest {
 
     private String medicineName;
     private Integer quantity;
