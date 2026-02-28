@@ -35,13 +35,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/doctors/**",
-<<<<<<< Updated upstream
                                 "/api/hospital/**",
-                                "api/admissions/**",
-                                "api/lab-results/**"
-=======
-                                "/api/hospital/**"
->>>>>>> Stashed changes
+                                "api/patient/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

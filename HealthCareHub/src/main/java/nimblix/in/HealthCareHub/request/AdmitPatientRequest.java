@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdmitPatientRequestDTO {
+public class AdmitPatientRequest {
 
     private Long patientId;
     private Long doctorId;

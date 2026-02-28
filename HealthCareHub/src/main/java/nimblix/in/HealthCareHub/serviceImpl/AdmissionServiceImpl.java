@@ -2,7 +2,7 @@ package nimblix.in.HealthCareHub.serviceImpl;
 
 import nimblix.in.HealthCareHub.model.*;
 import nimblix.in.HealthCareHub.repository.*;
-import nimblix.in.HealthCareHub.request.AdmitPatientRequestDTO;
+import nimblix.in.HealthCareHub.request.AdmitPatientRequest;
 import nimblix.in.HealthCareHub.response.AdmitPatientResponse;
 import nimblix.in.HealthCareHub.exception.DoctorNotFoundException;
 import nimblix.in.HealthCareHub.exception.PatientNotFoundException;
@@ -26,40 +26,50 @@ public class AdmissionServiceImpl implements AdmissionService {
 
     @Autowired
     private RoomRepository roomRepository;
+
     @Autowired
     private SpecializationRepository specializationRepository;
 
     @Override
     @Transactional
-    public AdmitPatientResponse admitPatient(AdmitPatientRequestDTO request) {
+    public AdmitPatientResponse admitPatient(AdmitPatientRequest request) {
 
+        // Step 1: Validate Patient
         Patient patient = patientRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new PatientNotFoundException(
-                        "Patient not found with id: " + request.getPatientId()));
+                .orElseThrow(() ->
+                        new PatientNotFoundException("Patient not found with id: " + request.getPatientId()));
 
-        boolean isPatientAlreadyAdmitted = admissionRepository
-                .existsByPatientIdAndStatus(request.getPatientId(), "ADMITTED");
+        // Step 2: Check if Patient already admitted
+        boolean isPatientAlreadyAdmitted =
+                admissionRepository.existsByPatientIdAndStatus(request.getPatientId(), "ADMITTED");
+
+        System.out.println("Exists check result: " + isPatientAlreadyAdmitted);
+
         if (isPatientAlreadyAdmitted) {
             throw new IllegalArgumentException(
                     "Patient is already admitted. Cannot admit the same patient twice.");
         }
 
+        // Step 3: Validate Doctor
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new DoctorNotFoundException(
-                        "Doctor not found with id: " + request.getDoctorId()));
+                .orElseThrow(() ->
+                        new DoctorNotFoundException("Doctor not found with id: " + request.getDoctorId()));
 
+        // Step 4: Validate Room
         Room room = roomRepository.findById(request.getRoomId())
-                .orElseThrow(() -> new RoomNotFoundException(
-                        "Room not found with id: " + request.getRoomId()));
+                .orElseThrow(() ->
+                        new RoomNotFoundException("Room not found with id: " + request.getRoomId()));
 
-        boolean isRoomOccupied = admissionRepository
-                .existsByRoomIdAndStatus(request.getRoomId(), "ADMITTED");
+        // Step 5: Check if Room is occupied
+        boolean isRoomOccupied =
+                admissionRepository.existsByRoomIdAndStatus(request.getRoomId(), "ADMITTED");
+
         if (isRoomOccupied) {
             throw new IllegalArgumentException(
-                    "Room " + room.getRoomNumber() + " is already occupied. " +
-                            "Please select another room.");
+                    "Room " + room.getRoomNumber() + " is already occupied. Please select another room.");
         }
 
+        // Step 6: Create Admission
         Admission admission = Admission.builder()
                 .patientId(request.getPatientId())
                 .doctorId(request.getDoctorId())
@@ -72,9 +82,11 @@ public class AdmissionServiceImpl implements AdmissionService {
 
         Admission savedAdmission = admissionRepository.save(admission);
 
+        // Step 7: Update Room Status
         room.setStatus(Room.RoomStatus.OCCUPIED);
         roomRepository.save(room);
 
+        // Step 8: Return Response
         return mapToResponse(savedAdmission, patient, doctor, room);
     }
 
@@ -82,9 +94,10 @@ public class AdmissionServiceImpl implements AdmissionService {
                                                Patient patient,
                                                Doctor doctor,
                                                Room room) {
+
         AdmitPatientResponse response = new AdmitPatientResponse();
 
-        // Admission info
+        // Admission Info
         response.setAdmissionId(admission.getAdmissionId());
         response.setAdmissionDate(admission.getAdmissionDate());
         response.setAdmissionReason(admission.getAdmissionReason());
@@ -92,33 +105,31 @@ public class AdmissionServiceImpl implements AdmissionService {
         response.setInitialDiagnosis(admission.getInitialDiagnosis());
         response.setStatus(admission.getStatus());
 
-        // Patient info
+        // Patient Info
         response.setPatientId(patient.getId());
         response.setPatientName(patient.getName());
         response.setPatientPhone(patient.getPhone());
 
-        // Doctor info
+        // Doctor Info
         response.setDoctorId(doctor.getId());
         response.setDoctorName("Dr. " + doctor.getName());
-<<<<<<< Updated upstream
-        response.setDoctorSpecialization(doctor.getSpecialization().getName());
 
+        // Fetch Specialization (Manual - No Mapping)
+        String specializationName = "General";
 
-=======
-        response.setDoctorSpecialization(doctor.getSpecialization());
+        if (doctor.getSpecialization() != null) {
+            Specialization specialization = specializationRepository
+                    .findById(doctor.getSpecialization().getId())
+                    .orElse(null);
 
+            if (specialization != null) {
+                specializationName = specialization.getName();
+            }
+        }
 
-//        Specialization specialization = specializationRepository
-//                .findById(doctor.getSpecializationId())
-//                .orElse(null);
-//        if (specialization != null) {
-//            response.setDoctorSpecialization(specialization.getName());
-//        } else {
-//            response.setDoctorSpecialization("General");
-//        }
->>>>>>> Stashed changes
+        response.setDoctorSpecialization(specializationName);
 
-        // Room info
+        // Room Info
         response.setRoomId(room.getRoomId());
         response.setRoomNumber(room.getRoomNumber());
         response.setRoomType(room.getRoomType());

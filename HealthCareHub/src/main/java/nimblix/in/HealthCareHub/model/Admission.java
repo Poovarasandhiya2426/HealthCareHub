@@ -18,7 +18,7 @@ public class Admission {
     private Long admissionId;
 
     // Simple Long FK - no @ManyToOne mapping
-    @Column(name = "patient_id")
+    @Column(name = "patientId")
     private Long patientId;
 
     // Simple Long FK - no @ManyToOne mapping
@@ -54,9 +54,7 @@ public class Admission {
         if (this.admissionDate == null) {
             this.admissionDate = HealthCareUtil.changeCurrentTimeToLocalDateFromGmtToISTInString();
         }
-        if (this.status == null) {
-            this.status = "ADMITTED";
-        }
+
     }
 
     @PreUpdate
