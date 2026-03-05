@@ -70,6 +70,12 @@ public class GlobalExceptionHandler {
         response.put("message", message);
         return new ResponseEntity<>(response, status);
     }
+    @ExceptionHandler(SlotNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleSlotNotFound(SlotNotFoundException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
 }
-
-

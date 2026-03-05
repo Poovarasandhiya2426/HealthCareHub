@@ -1,25 +1,27 @@
 package nimblix.in.HealthCareHub.serviceImpl;
 
 import lombok.RequiredArgsConstructor;
+import nimblix.in.HealthCareHub.exception.SlotNotFoundException;
 import nimblix.in.HealthCareHub.constants.HealthCareConstants;
 import nimblix.in.HealthCareHub.exception.DoctorNotFoundException;
 import nimblix.in.HealthCareHub.exception.UserNotFoundException;
 import nimblix.in.HealthCareHub.model.Doctor;
+import nimblix.in.HealthCareHub.model.DoctorAvailability;
+import nimblix.in.HealthCareHub.model.Hospital;
+import nimblix.in.HealthCareHub.model.Specialization;
+import nimblix.in.HealthCareHub.repository.DoctorAvailabilityRepository;
 import nimblix.in.HealthCareHub.repository.DoctorRepository;
+import nimblix.in.HealthCareHub.repository.HospitalRepository;
+import nimblix.in.HealthCareHub.repository.SpecializationRepository;
+import nimblix.in.HealthCareHub.request.DoctorAvailabilityRequest;
 import nimblix.in.HealthCareHub.request.DoctorRegistrationRequest;
-import nimblix.in.HealthCareHub.response.DoctorProfileResponse;
+import nimblix.in.HealthCareHub.response.DoctorAvailabilityResponse;
 import nimblix.in.HealthCareHub.service.DoctorService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import nimblix.in.HealthCareHub.model.Hospital;
-import nimblix.in.HealthCareHub.model.Specialization;
-import nimblix.in.HealthCareHub.repository.HospitalRepository;
-import nimblix.in.HealthCareHub.repository.SpecializationRepository;
-
-import java.util.List;
-
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,213 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorRepository doctorRepository;
     private final HospitalRepository hospitalRepository;
     private final SpecializationRepository specializationRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
+    private String getTodayDateIST() {
+        return java.time.LocalDate.now(IST_ZONE).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    }
+
+    private String getCurrentTimeIST() {
+        return java.time.LocalTime.now(IST_ZONE)
+                .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+    }
+    private void validateDateStringFormat(String date) {
+        if (!date.matches("\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])")) {
+            throw new IllegalArgumentException("Invalid date format. Use yyyy-MM-dd");
+        }
+    }
+
+    private void validateTimeStringFormat(String time) {
+        if (!time.matches("([01][0-9]|2[0-3]):[0-5][0-9]")) {
+            throw new IllegalArgumentException("Invalid time format. Use HH:mm");
+        }
+    }
+
+    @Override
+    public DoctorAvailabilityResponse addDoctorTimeSlot(DoctorAvailabilityRequest request) {
+
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        Long doctorId = request.getDoctorId();
+        if (doctorId == null || doctorId <= 0) {
+            throw new IllegalArgumentException("Invalid doctor id");
+        }
+        if (request.getAvailableDate() == null || request.getAvailableDate().trim().isEmpty())
+            throw new IllegalArgumentException("Available date cannot be null or empty");
+
+        if (request.getStartTime() == null || request.getStartTime().trim().isEmpty())
+            throw new IllegalArgumentException("Start time cannot be null or empty");
+
+        if (request.getEndTime() == null || request.getEndTime().trim().isEmpty())
+            throw new IllegalArgumentException("End time cannot be null or empty");
+
+        if (request.getIsAvailable() == null)
+            throw new IllegalArgumentException("Availability status cannot be null");
+
+        validateDateStringFormat(request.getAvailableDate());
+        validateTimeStringFormat(request.getStartTime());
+        validateTimeStringFormat(request.getEndTime());
+
+       Doctor doctor= doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "Doctor not found with id: " + doctorId));
+
+        String today = getTodayDateIST();
+        String currentTime = getCurrentTimeIST();
+
+        String slotDate = request.getAvailableDate();
+        String start = request.getStartTime();
+        String end = request.getEndTime();
+
+        if (slotDate.compareTo(today) < 0) {
+            throw new IllegalStateException("Cannot add slot for past date");
+        }
+
+        if (slotDate.equals(today) && start.compareTo(currentTime) <= 0) {
+            throw new IllegalStateException("Cannot add slot for past time");
+        }
+
+        if (start.compareTo(end) >= 0) {
+            throw new IllegalStateException("Start time must be before end time");
+        }
+//duplicate check
+        boolean exists = doctorAvailabilityRepository
+                .existsByDoctor_IdAndAvailableDateAndStartTime(
+                        doctorId,
+                        request.getAvailableDate(),
+                        request.getStartTime()
+                );
+
+        if (exists) {
+            throw new IllegalStateException(
+                    "Time slot already exists for doctor on " +
+                            request.getAvailableDate() + " at " + request.getStartTime()
+            );
+        }
+        boolean overlap = doctorAvailabilityRepository
+                .existsOverlappingSlot(
+                        doctorId,
+                        request.getAvailableDate(),
+                        request.getStartTime(),
+                        request.getEndTime()
+                );
+
+        if (overlap) {
+            throw new IllegalStateException("Time slot overlaps with existing slot");
+        }
+        DoctorAvailability slot = DoctorAvailability.builder()
+                .doctor(doctor)
+                .availableDate(request.getAvailableDate())
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .isAvailable(request.getIsAvailable())
+                .build();
+
+       DoctorAvailability saved = doctorAvailabilityRepository.save(slot);
+        return doctorAvailabilityRepository.getSlotResponseById(saved.getId());
+    }
+
+    @Override
+    public DoctorAvailabilityResponse updateDoctorTimeSlot(DoctorAvailabilityRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+
+        Long doctorId = request.getDoctorId();
+        Long slotId = request.getSlotId();
+
+        if (doctorId == null || doctorId <= 0) {
+            throw new IllegalArgumentException("Invalid doctor id");
+        }
+        if (slotId == null || slotId <= 0) {
+            throw new IllegalArgumentException("Invalid slot id");
+        }
+        DoctorAvailability slot = doctorAvailabilityRepository.findById(slotId)
+                .orElseThrow(() -> new SlotNotFoundException(
+                        "Time slot not found with id: " + slotId
+                ));
+        if(!slot.getDoctor().getId().equals(doctorId)){
+            throw new SlotNotFoundException("Time slot not found for this doctor");
+        }
+
+        // Determine final values (existing or updated)
+        String finalDate = request.getAvailableDate() != null
+                ? request.getAvailableDate()
+                : slot.getAvailableDate();
+
+        String finalStart = request.getStartTime() != null
+                ? request.getStartTime()
+                : slot.getStartTime();
+
+        String finalEnd = request.getEndTime() != null
+                ? request.getEndTime()
+                : slot.getEndTime();
+        boolean finalAvailability = request.getIsAvailable() != null
+                ? request.getIsAvailable()
+                : slot.isAvailable();
+
+        if (finalDate.equals(slot.getAvailableDate()) &&
+                finalStart.equals(slot.getStartTime()) &&
+                finalEnd.equals(slot.getEndTime()) &&
+                ( finalAvailability == slot.isAvailable())) {
+            throw new IllegalStateException("No changes detected for update");
+        }
+        validateDateStringFormat(finalDate);
+        validateTimeStringFormat(finalStart);
+        validateTimeStringFormat(finalEnd);
+
+        String today = getTodayDateIST();
+        String currentTime = getCurrentTimeIST();
+
+        if (finalDate.compareTo(today) < 0) {
+            throw new IllegalStateException("Cannot update slot to past date");
+        }
+
+        if (finalDate.equals(today) && finalStart.compareTo(currentTime) <= 0) {
+            throw new IllegalStateException("Cannot update slot to past time");
+        }
+
+        if (finalStart.compareTo(finalEnd) >= 0) {
+            throw new IllegalStateException("Start time must be before end time");
+        }
+//  Duplicate check using final values
+        boolean exists = doctorAvailabilityRepository
+                .existsByDoctor_IdAndAvailableDateAndStartTimeAndIdNot(
+                        doctorId,
+                        finalDate,
+                        finalStart,
+                        slotId
+                );
+
+        if (exists) {
+            throw new IllegalStateException(
+                    "Time slot already exists for doctor on " +
+                            finalDate + " at " + finalStart
+            );
+        }
+//  Overlap check using final values
+        boolean overlap = doctorAvailabilityRepository
+                .existsOverlappingSlotForUpdate(
+                        doctorId,
+                        finalDate,
+                        finalStart,
+                        finalEnd,
+                        slotId
+                );
+        if (overlap) {
+            throw new IllegalStateException("Time slot overlaps with existing slot");
+        }
+
+        slot.setAvailableDate(finalDate);
+        slot.setStartTime(finalStart);
+        slot.setEndTime(finalEnd);
+        slot.setAvailable(finalAvailability);
+
+        DoctorAvailability saved = doctorAvailabilityRepository.save(slot);
+        return doctorAvailabilityRepository.getSlotResponseById(saved.getId());
+    }
 
     @Override
     public String registerDoctor(DoctorRegistrationRequest request) {
@@ -114,6 +323,7 @@ public class DoctorServiceImpl implements DoctorService {
 
         return "Doctor Updated Successfully";
     }
+
 
 //    @Override
 //    public String deleteDoctorDetails(Long doctorId) {
